@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+
+<!--> 
+Sets window size 
+<-->
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+
+<!--> 
+Sets game title
+<-->
+  <property name="windowTitle">
+   <string>Memory Game</string>
+  </property>
+  
+
+
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    
+    <item>
+
+    <!--> 
+    Number of matched pairs 
+    <-->
+     <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+       <widget class="QLabel" name="pairsLabel">
+       </widget>
+      </item>
+
+
+    <!--> 
+    Number of tries  
+    <-->
+      <item>
+       <widget class="QLabel" name="stepsLabel">
+       </widget>
+      </item>
+
+      
+    <!--> 
+    Reset Button   
+    <-->
+      <item>
+       <widget class="QPushButton" name="resetButton">
+        <property name="text">
+         <string>Reset</string>
+        </property>
+       </widget>
+      </item>
+      
+     </layout>
+    </item>
+
+
+    <!--> 
+       
+    <-->
+    <item>
+     <widget class="QGraphicsView" name="graphicsView">
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+     </widget>
+    </item>
+
+    
+
+
+   </layout>
+  </widget>
+ </widget>
+
+<!--> 
+Connections for Click, Reset and Start actions  
+<-->
+ <connections>
+
+  <connection>
+   <sender>resetButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>startGame()</slot>
+  </connection>
+
+ </connections>
+
+<!--> 
+Slot for starting game
+<-->
+ <slots>
+  <slot>startGame()</slot>
+ </slots>
+
+
+</ui>

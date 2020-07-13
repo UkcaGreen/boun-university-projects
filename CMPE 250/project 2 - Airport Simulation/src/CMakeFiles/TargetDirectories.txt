@@ -1,0 +1,1 @@
+/home/student/ClionProjects/Project-2/CMakeFiles/project2.dir
