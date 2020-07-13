@@ -1,2 +1,2 @@
 # boun-university-projects
-Projects that I made at Boğaziçi University
+Projects and assignments that I made at Boğaziçi University.
