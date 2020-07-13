@@ -1,0 +1,14 @@
+{% extends "base_template.html" %} {% block style %}
+<style>
+  h4 {
+    margin: 120px auto;
+  }
+</style>
+{% endblock %} {% block content %}
+
+<h4>
+  Hello {% if session["type"] == "artist" %}{{ session["name"] }} {{
+  session["surname"] }}{% elif session["type"] == "listener" %}{{
+  session["username"] }}{% endif %}, welcome to DBtify.
+</h4>
+{% endblock %}

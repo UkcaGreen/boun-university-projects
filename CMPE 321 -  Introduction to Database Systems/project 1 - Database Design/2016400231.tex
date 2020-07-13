@@ -1,0 +1,793 @@
+\documentclass{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1.25in]{geometry}
+\usepackage{hyperref}
+\usepackage[vlined, boxed, linesnumbered]{algorithm2e}
+\usepackage{float}
+\SetEndCharOfAlgoLine{}
+\SetKwProg{Fn}{Function}{:}{end}
+
+\title{ \Huge
+CmpE 321\\
+Introduction to Database Systems\\
+\null \\
+Spring 2020\\
+\null \\
+Homework 1 \\
+\textbf{Storage Management System} \\
+\null
+}
+\author{\Large Emilcan ARICAN}
+\date{\Large 2016400231}
+
+\begin{document}
+\maketitle
+\newpage
+
+\tableofcontents
+\newpage
+\textbf{}
+\bigskip
+\section{Introduction}
+
+In this project I have implemented a storage management system. It basically contains two main parts which are system catalog and data storage units. Purpose of the system catalog is storing the meta data. In the scope of this project meta data is types that can be defined by user. System catalog is structured similarly with the data storage units in this project however it is simpler (ie. pages of the system catalog in a signly linked list manner). The other part is data storage units they hold actual data. There are three structures namely file, page, and record. Files consist of pages, and hold the information of the next file and the previous file in order to create a design like a doubly linked list. Similar approach is present in the pages as well. They keeps id of their next and previous pages, and they contains records. Records have the fields that is provided by the user. (More detailed information will be given in the related sections of the report.) There are several DDL and DML operations that is implemented. These are basically core functionalities of the storage management system. These are create/delete/list type, and create/delete/search/update/list record.  Pseudo codes are provided in the related sections.
+
+\newpage
+\section{Assumptions and Constraints}
+
+\subsection{Assumptions}
+
+\begin{itemize}
+    \item Page size $\rightarrow$ 1900 bytes
+    \item File size $\rightarrow$ 15200 bytes
+    \item Type header has type id, type state, type name, number of fields, name of the initial page.
+    \item Record header has record id, record state.
+    \item Page header has: (in the system catalog basis) page id, page state, number of types, id of the next page.
+    \item Page header has: (in the data storage unit basis) page id, page state, number of types, id of the previous page, id of the next page.
+    \item File header has file state, number of pages, name of the previous file, name of the next file, initial page id.
+    \item Max number of fields a type can have $\rightarrow$ 8
+    \item Max length of a type name $\rightarrow$ 16
+    \item Max length of a field name $\rightarrow$ 16
+    \item User always enters valid input.
+    \item All fields shall be integers.  However, type and field names shall be alphanumeric.
+    \item A disk manager already exists that is able to fetch the necessary pages when addressed.
+    \item I have a "state" enum where 0 corresponds to "available", 1 corresponds to "full", 2 corresponds to "deleted".
+    \item "systemcatalog.meta" file should not be deleted.
+    \item User will not provide two records with the same primary key for a spesific type
+    \item There exist a "swap" function that performs swap operation between two records.
+    \item There exist an unique file name generator function.
+    \item There exist setInitialFile(recordType, fileName) function that sets the related field in the system catalog.
+\end{itemize}
+
+\subsection{Constraints}
+\begin{itemize}
+    \item The data must be organized in pages and pages must contain records. Page and record structure must be explained in the report.
+    \item Storing all pages in the same file is not allowed and a file must contain multiple pages. This means that system must be able to create new files as storage manager grows.Moreover, when a file becomes free due to deletions, that file must be deleted.
+    \item Although a file contains multiple pages, it must read page by page when it is needed. Loading the whole file to RAM is not allowed.
+    \item The primary key of a record should be assumed to be the value of the first field of that record.
+    \item Records in the files should be stored in ascending order according to their primary keys.
+\end{itemize}
+
+\newpage
+\section{Storage Structures}
+
+This system has two storage structures system catalog, and data storage units. Data storage units are file, page, and record. File and page are designed as a linked list. In their header they have related fields so that they can refer/access their next and previous neighbours. Files contains pages, and pages contains records. System catalog stores record types and initial files for the specific type.
+
+\subsection{System Catalog}
+System catalog is responsible for storing metadata. It contains record types. General structure of the system catalog as the following: files forms a doubly linked list and contains pages; pages forms a singly linked list and contains types; types has field names and number of fields in them.
+
+\subsubsection{File}
+    If a file becomes full, another file is created and added end of the linked list of the files (when a new type will be created). Starting node (initial file) is \textbf{systemcatalog.meta}.
+
+    \paragraph{File Header}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    file state & number of pages & name of the next file & name of the previous file & id of the initial page \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item file state $\rightarrow$ 1 byte
+        \item number of pages $\rightarrow$ 1 byte
+        \item name of the next file $\rightarrow$ 16 bytes
+        \item name of the previous file $\rightarrow$ 16 bytes
+        \item id of the initial page $\rightarrow$ 4 bytes
+    \end{itemize}
+    
+    \paragraph{File Pages}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    page header 1 & type 1 & ... & type 10 \\ \hline
+    page header 2 & type 1 & ... & type 10 \\ \hline
+    ...           & ...      & ... & ...       \\ \hline
+    page header 8 & type 1 & ... & type 10 \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item page 1 $\rightarrow$ 1740 bytes
+        \item page 2 $\rightarrow$ 1740 bytes
+        \newline \vdots
+        \item page 8 $\rightarrow$ 1740 bytes
+    \end{itemize}
+\newpage
+\subsubsection{Page}
+    Each page contains 10 records. If a page is deleted or becomes full its state is changed accordingly. Id of the starting node (initial page) of the linked list of pages is stored in the header file header.
+
+    \paragraph{Page Header}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    page id & page state & number of types & id of the next page \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item page id $\rightarrow$ 4 bytes
+        \item page state $\rightarrow$ 1 byte
+        \item number of types $\rightarrow$ 1 byte
+        \item id of the next page $\rightarrow$ 4 bytes
+    \end{itemize}
+    \paragraph{Types}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|l|c|c|c|}
+    \hline
+    \multicolumn{2}{|c|}{Type Header 1}  & field name 1 & ... & field name 8 \\ \hline
+    \multicolumn{2}{|c|}{Type Header 2}  & field name 1 & ... & field name 8 \\ \hline
+    \multicolumn{2}{|c|}{...}              & ...     & ... & ...     \\ \hline
+    \multicolumn{2}{|c|}{Type Header 10} & field name 1 & ... & field name 8 \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item type 1 $\rightarrow$ 173 bytes
+        \item type 2 $\rightarrow$ 173 bytes
+        \newline \vdots
+        \item type 10 $\rightarrow$ 173 bytes
+    \end{itemize}
+
+\subsubsection{Type}
+    Each type contains 8 field names. If a type is deleted or becomes full its state is changed accordingly.
+    \paragraph{Type Header}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    type id & type state & type name & number of fields & name of the initial file \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item type id $\rightarrow$ 4 bytes
+        \item type state $\rightarrow$ 4 bytes
+        \item type name $\rightarrow$ 16 bytes
+        \item number of fields $\rightarrow$ 1 byte
+        \item name of the initial file $\rightarrow$ 16 bytes
+    \end{itemize}
+    \paragraph{Field Names}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|l|c|l|l|}
+    \hline
+    \multicolumn{2}{|c|}{field name 1} & field name 2 & ... & field name 8 \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item field name 1 $\rightarrow$ 16 bytes
+        \item field name 2 $\rightarrow$ 16 bytes
+        \newline \vdots
+        \item field name 8 $\rightarrow$ 16 bytes
+    \end{itemize}
+    
+\subsection{Data Storage Units}
+
+Data storage units store the actual data. It contains records provided by user. General structure of the data storage units as the following: files forms a doubly linked list and contains pages; pages also forms a doubly linked list and contains records; records has field values in them.
+
+\subsubsection{File}
+    Each file contains only one type of record. If a file becomes full, another file is created and added end of the linked list of the files (when a new record will be created). Name of the starting node (initial file) of the linked list is stored in the header of the related type in the system catalog.
+    \paragraph{File Header}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|l|c|l|l|l|}
+    \hline
+    \multicolumn{2}{|c|}{file state} & number of pagess & name of the next file & name of the previous file & id of the initial page \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item file state $\rightarrow$ 1 byte
+        \item number of pages $\rightarrow$ 1 byte
+        \item name of the next file $\rightarrow$ 16 bytes
+        \item name of the previous file $\rightarrow$ 16 bytes
+        \item id of the initial page $\rightarrow$ 4 bytes
+    \end{itemize}
+    
+    \paragraph{File Pages}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    page header 1 & record 1 & ... & record 50 \\ \hline
+    page header 2 & record 1 & ... & record 50 \\ \hline
+    ...           & ...      & ... & ...       \\ \hline
+    page header 8 & record 1 & ... & record 50 \\ \hline
+    \end{tabular}
+    \end{table}
+    
+    \begin{itemize}
+        \item page 1 $\rightarrow$ 1864 bytes
+        \item page 2 $\rightarrow$ 1864 bytes
+        \newline \vdots
+        \item page 8 $\rightarrow$ 1864 bytes
+    \end{itemize}
+    
+\subsubsection{Page}
+    Each page contains 50 records. If a page is deleted or becomes full its state is changed accordingly. Id of the starting node (initial page) of the linked list of pages is stored in the header file header.
+    \paragraph{Page Header}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    page id & page state & number of records & id of the previous page & id of the next page \\ \hline
+    \end{tabular}
+    \end{table}
+    
+    \begin{itemize}
+        \item page id $\rightarrow$ 4 bytes
+        \item page state $\rightarrow$ 1 byte
+        \item number of records $\rightarrow$ 1 byte
+        \item id of the previous page $\rightarrow$ 4 bytes
+        \item id of the next page $\rightarrow$ 4 bytes
+    \end{itemize}
+    \paragraph{Page Records}
+    $\\$
+    \begin{table}[H]
+    \begin{tabular}{|c|l|c|c|c|}
+    \hline
+    \multicolumn{2}{|c|}{Record Header 1}  & field 1 & ... & field 8 \\ \hline
+    \multicolumn{2}{|c|}{Record Header 2}  & field 1 & ... & field 8 \\ \hline
+    \multicolumn{2}{|c|}{...}              & ...     & ... & ...     \\ \hline
+    \multicolumn{2}{|c|}{Record Header 50} & field 1 & ... & field 8 \\ \hline
+    \end{tabular}
+    \end{table}
+    
+    \begin{itemize}
+        \item record 1 $\rightarrow$ 37 bytes
+        \item record 2 $\rightarrow$ 37 bytes
+        \newline \vdots
+        \item record 50 $\rightarrow$ 37 bytes
+    \end{itemize}
+
+\subsubsection{Record}
+    Each record contains 8 fields. If a record is deleted or becomes full its state is changed accordingly.
+    $\\$
+    
+    \begin{minipage}[t]{.5\textwidth}
+        \paragraph{Record Header}
+        $\\$
+        \begin{table}[H]
+        \begin{tabular}{|c|l|c|}
+        \hline
+        \multicolumn{2}{|c|}{record id} & record state \\ \hline
+        \end{tabular}
+        \end{table}
+        \begin{itemize}
+            \item record id $\rightarrow$ 4 bytes
+            \item record state $\rightarrow$ 1 byte
+        \end{itemize}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\textwidth}
+        \paragraph{Record Fields}
+        $\\$
+        \begin{table}[H]
+        \begin{tabular}{|c|l|c|l|l|}
+        \hline
+        \multicolumn{2}{|c|}{field 1} & field 2 & ... & field 8 \\ \hline
+        \end{tabular}
+        \end{table}
+        \begin{itemize}
+            \item field 1 $\rightarrow$ 4 bytes
+            \item field 2 $\rightarrow$ 4 bytes
+            \newline \vdots
+            \item field 8 $\rightarrow$ 4 bytes
+        \end{itemize}
+    \end{minipage}
+    
+
+\section{Operations}
+
+\subsection{DDL Operations}
+
+\subsubsection{Create a type}
+It starts from the "systemcatalog.meta" and finds an available page. (If needed creates a new page.) Iterates over page headers until find an available one. Loads the page and adds the new type. Then updates page header, and file header accordingly.
+
+\begin{algorithm}[H]
+    
+    \Fn{createType(typeToCreate: Type)}
+    {
+        fileName $\gets$ "systemcatalog.meta"\;
+        fileHeader $\gets$ getFileHeader(fileName)\;
+        \While{fileHeader.fileState $=$ enum.full}
+        {
+            \If{fileHeader.nextFileName $=$ null}
+            {
+                fileName $\gets$ generateNewMetaFileName()\;
+                createFile(fileName)\;
+                fileHeader.nextFileName $\get$ fileName\;
+            }
+            fileHeader $\gets$ getFileHeader(fileHeader.nextFileName)\;
+        }
+        
+        pageHeader $\gets$ getPageHeader(fileHeader.initialPageId)\;
+        \While{pageHeader.pageState $=$ enum.full}
+        {
+            pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+        }
+        
+        page $\gets$ getPage(pageHeader.pageId)\;
+        \For{$i\gets0$ \KwTo $10$}
+        {
+            \If{page.types$[i]$.typeState $\neq$ enum.full}
+            {
+                type $\gets$ page.types$[i]$\;
+                type.typeId $\gets$ getNewTypeId()\;
+                type.typeState $\gets$ enum.full\;
+                type.typeName $\gets$ typeToCreate.typeName
+                \For{$j\gets0$ \KwTo typeToCreate.numberOfFields}
+                {
+                    type.fieldNames$[j]$ = typeToCreate.fieldNames$[j]$\;
+                }
+                break
+            }
+        }
+        
+        pageHeader.numberOfTypes $+=$ 1 \;
+        \If{pageHeader.numberOfTypes $=$ 10}
+        {
+            pageHeader.pageState $\gets$ enum.full\;
+            fileHeader.numberOfPages $+=$ 1\;
+            \If{fileHeader.numberOfPages $=$ 8}
+            {
+                fileHeader.fileState $\gets$ enum.full\;
+            }
+        }
+        
+    }
+\end{algorithm}
+\newpage
+\subsubsection{Delete a type}
+Iterates over files, pages, records until find the type with the same id. Then changes its state to deleted. gapFixer is called in oerder to fix the gap appears after deletion (for detailed information please check helper operations). After that updates file header, and page header. I necessary it deletes the file becomes free after deletion.
+
+\begin{algorithm}[H]
+    \Fn{deleteType(typeId: int)}{
+        fileName $\gets$ "systemcatalog.meta"\;
+        isDeleted $\gets$ False\;
+        \Repeat{fileHeader.nextFileName $\neq$ null \textbf{and} isDeleted $\neq$ True}
+        {
+            fileHeader $\gets$ getFileHeader(fileName)\;
+            pageHeader $\gets$ getPageHeader(fileHeader.initialPageId)\;
+            \Repeat{pageHeader.nextPageId $\neq$ null \textbf{and} isDeleted $\neq$ True}
+            {
+                \If{pageHeader.pageState $\neq$ enum.deleted}
+                {
+                    page $\gets$ getPage(pageHeader.pageId)\;
+                    \For{$i\gets0$ \KwTo pageHeader.numberOfRecords}
+                    {
+                        \If{page.types$[i]$.typeId $=$ typeId}
+                        {
+                            page.types$[i]$.typeState $\gets$ enum.deleted\;
+                            isDeleted $\gets$ True\;
+                            break
+                        }
+                    }
+                }
+                pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+            }
+        }
+        
+        pageHeader.numberOfTypes $-=$ 1\;
+        \If{pageHeader.numberOfTypes $=$ 0}
+        {
+            pageHeader.pageState $\gets$ enum.deleted\;
+            fileHeader.numberOfPages $-=$ 1\;
+        }
+        
+        \If{fileHeader.numberOfPages $=$ 0}
+        {
+            \If{fileHeader.previousFileName $\neq$ null}
+            {
+                previousFileHeader $\gets$ getFileHeader(fileHeader.previousFileName)\;
+                previousFileHeader.nextFileName $\gets$ fileHeader.nextFileName\;
+                
+                \If{fileHeader.nextFileName $\neq$ null}
+                {
+                    nextFileHeader $\gets$ getFileHeader(fileHeader.nextFileName)\;
+                    nextFileHeader.previousFileName $\gets$ fileHeader.previousFileName\;
+                }
+                deleteFile(fileName)\;
+            }
+        }
+    }
+\end{algorithm}
+
+\subsubsection{List all types}
+Iterates over files, pages, types; of system catalog. While iterating over them prints the name of the types.
+
+\begin{algorithm}[H]
+    \Fn{listAllTypes()}{
+        fileName $\gets$ "systemcatalog.meta"\;
+        \Repeat{fileName $\neq$ null}{
+            fileHeader $\gets$ getFileHeader(fileName)\;
+            pageHeader $\gets$ getPageHeader(fileHeader.initialPageId)\;
+            \Repeat{pageHeader $\neq$ null}{
+                page $\gets$ getPage(pageHeader.id)\;
+                \For{$i\gets0$ \KwTo page.types}{
+                    \If{page.types$[i]$.typeState = enum.full}{
+                        print(page.records[i].typeName)\;
+                    }
+                }
+                pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+            }
+            fileName $\gets$ getFileHeader(fileHeader.nextFileName)\;
+        }
+    }
+\end{algorithm}
+\newpage
+\subsection{DML Operations}
+\subsubsection{Create a record}
+First checks if file exists otherwise creates it. Iterates over page headers until find an available one. Loads the page and adds the new record. Then updates page header, and file header accordingly. In order to preserve the sorted state of the file, basicSortFixer is called. (for detailed information please check helper operations)
+
+\begin{algorithm}[H]
+    \Fn{createRecord(recordToCreate: Record)}
+    {
+        recordType $\gets$ recordToCreate.type\;
+        fileName $\gets$ getInitialFileName(recordType)\;
+        \If{fileName $=$ null}
+        {
+            fileName $\gets$ generateNewFileName(recordType)\;
+            createFile(fileName)\;
+            setInitialFileName(recordType, fileName)\;
+        }
+        
+        fileHeader $\gets$ getFileHeader(fileName)\;
+        \While{fileHeader.fileState $=$ enum.full}
+        {
+            \If{fileHeader.nextFileName $=$ null}
+            {
+                fileName $\gets$ generateNewFileName(recordType)\;
+                createFile(fileName)\;
+                fileHeader.nextFileName $\gets$ fileName\;
+            }
+            fileHeader $\gets$ getFileHeader(fileHeader.nextFileName)\;
+        }
+        
+        pageHeader $\gets$ getPageHeader(fileHeader.initialPageId)\;
+        \While{pageHeader.pageState $=$ enum.full}
+        {
+            pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+        }
+        
+        page $\gets$ getPage(pageHeader.pageId)\;
+        \For{$i\gets0$ \KwTo $49$}
+        {
+            \If{page.records$[i]$.recordState $\neq$ enum.full}
+            {
+                record $\gets$ page.records$[i]$\;
+                record.recordId $\gets$ getNewRecordId()\;
+                record.recordState $\gets$ enum.full\;
+                \For{$j\gets0$ \KwTo 7}
+                {
+                    \eIf{$j$ < getNumberOfFields(recordType)}
+                    {
+                        record.fields$[j]$ $\gets$ recordToCreate.fields$[j]$\;
+                    }
+                    {
+                        record.fields$[j]$ $\gets$ 0\;
+                    }
+                }
+                break
+            }
+        }
+        
+        pageHeader.numberOfRecords $+=$ 1 \;
+        \If{pageHeader.numberOfRecords $=$ 50}
+        {
+            pageHeader.pageState $\gets$ enum.full\;
+            fileHeader.numberOfPages $+=$ 1\;
+            \If{fileHeader.numberOfPages $=$ 8}
+            {
+                fileHeader.fileState $\gets$ enum.full\;
+            }
+        }
+        
+        basicSortFixer(pageHeader.pageId)\;
+    }
+\end{algorithm}
+
+\subsubsection{Delete a record}
+First gets the list of types. Then for each type iterates over files, pages, records until find the record with the same id. Then changes its state to deleted. gapFixer is called in oerder to fix the gap appears after deletion (for detailed information please check helper operations). After that updates file header, and page header. I necessary it deletes the file becomes free after deletion.
+
+\begin{algorithm}[H]
+    \Fn{deleteRecord(recordId: int)}{
+        isDeleted $\gets$ False\;
+        typeList $\gets$ getListOfTypes("systemcatalog.meta")\;
+        
+        \For{\textbf{each} recordType \textbf{in} typeList}
+        {
+            \If{isDeleted $=$ True}
+            {
+                break
+            }
+            fileName $\gets$ getInitialFileName(recordType)\;
+            \Repeat{fileHeader.nextFileName $=$ null \textbf{and} isDeleted $\neq$ True}
+            {
+                fileHeader $\gets$ getFileHeader(fileName)\;
+                pageHeader $\gets$ getPageHeader(fileHeader.initialPageId)\;
+                \Repeat{pageHeader.nextPageId $=$ null \textbf{and} isDeleted $\neq$ True}
+                {
+                    \If{pageHeader.pageState $\neq$ enum.deleted}
+                    {
+                        page $\gets$ getPage(pageHeader.pageId)\;
+                        \For{$i\gets0$ \KwTo pageHeader.numberOfRecords}
+                        {
+                            \If{page.records$[i]$.recordId $=$ recordId}
+                            {
+                                page.records$[i]$.recordState $\gets$ enum.deleted\;
+                                isDeleted $\gets$ True\;
+                                break
+                            }
+                        }
+                    }
+                    pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+                }
+            }
+        }
+        
+        pageHeader $\gets$ gapFixer(fileName)\;
+        
+        pageHeader.numberOfRecords $-=$ 1\;
+        \If{pageHeader.numberOfRecords $=$ 0}
+        {
+            pageHeader.pageState $\gets$ enum.deleted\;
+            fileHeader.numberOfPages $-=$ 1\;
+        }
+        
+        \If{fileHeader.numberOfPages $=$ 0}
+        {
+            \eIf{fileHeader.previousFileName $\neq$ null}
+            {
+                previousFileHeader $\gets$ getFileHeader(fileHeader.previousFileName)\;
+                previousFileHeader.nextFileName $\gets$ fileHeader.nextFileName\;
+            }
+            {
+                setInitialFile(recordType, fileHeader.nextFileName)\;
+            }
+            \If{fileHeader.nextFileName $\neq$ null}
+            {
+                nextFileHeader $\gets$ getFileHeader(fileHeader.nextFileName)\;
+                nextFileHeader.previousFileName $\gets$ fileHeader.previousFileName\;
+            }
+            deleteFile(fileName)\;
+        }
+    }
+\end{algorithm}
+
+\subsubsection{Search for a record (by primary key)}
+    First related initial file name is gathered. Then iterates over files, pages, records in order to find matching first field. Then returns the record.
+
+\begin{algorithm}[H]
+    \Fn{searchRecord(primaryKey: int, recordType: Type)}{
+        fileName $\gets$ getInitialFileName(recordType)\;
+        \Repeat{fileHeader.nextFileName $\neq$ null}
+        {
+            fileHeader $\gets$ getFileHeader(fileName)\;
+            pageHeader $\gets$ getPageHeader(fileHeader.initialPageId)\;
+            \Repeat{pageHeader.nextPageId $\neq$ null}
+            {
+                \If{pageHeader.pageState $\neq$ enum.deleted}
+                {
+                    page $\gets$ getPage(pageHeader.pageId)\;
+                    \For{$i\gets0$ \KwTo pageHeader.numberOfRecords}
+                    {
+                        \If{page.records$[i]$.fields$[0]$ $=$ primaryKey}
+                        {
+                            \textbf{return }page.records$[i]$\;
+                        }
+                    }
+                }
+                pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+            }
+        }
+    }
+\end{algorithm}
+\subsubsection{Update a record (by primary key)}
+First locates the record that will be updated. Then modifies it. Finally calls basicSortFixer (for detailed information please check helper operations) function to maintain sorted state.
+
+\begin{algorithm}[H]
+    \Fn{updateRecord(primaryKey: int, newRecord: Record)}{
+        fileName $\gets$ getInitialFileName(recordType)\;
+        \Repeat{fileHeader.nextFileName $\neq$ null}
+        {
+            fileHeader $\gets$ getFileHeader(fileName)\;
+            pageHeader $\gets$ getPageHeader(fileHeader.initialPageId)\;
+            \Repeat{pageHeader.nextPageId $\neq$ null}
+            {
+                \If{pageHeader.pageState $\neq$ enum.deleted}
+                {
+                    page $\gets$ getPage(pageHeader.pageId)\;
+                    \For{$i\gets0$ \KwTo pageHeader.numberOfRecords}
+                    {
+                        \If{page.records$[i]$.field$[0]$ $=$ primaryKey}
+                        {
+                            record $\gets$ page.records$[i]$\;
+                            \For{$j\gets0$ \KwTo 8}
+                            {
+                                \eIf{getNumberOfFields(newRecord.type) $> j$ }
+                                {
+                                    record$[i]$.fields$[j]$ $\gets$ newRecord.fields$[j]$\;
+                                }
+                                {
+                                    record$[i]$.fields$[j]$ $\gets$ 0\;
+                                }
+                            }
+                        }
+                    }
+                }
+                pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+            }
+        }
+        basicSortFixer(fileName)\;
+    }
+\end{algorithm}
+
+\subsubsection{List all records of a type}
+First related initial file name is gathered. Then iterates over files, pages, records. While iterating prints the records.
+
+\begin{algorithm}[H]
+    \Fn{listAllRecords(typeToList: Type)}{
+        fileName $\gets$ getInitialFileName(typeToList)\;
+        \Repeat{fileName $\neq$ null}{
+            fileHeader $\gets$ getFileHeader(fileName)\;
+            pageHeader $\gets$ getPageHeader(fileHeader.initialPageId)\;
+            \Repeat{pageHeader $\neq$ null}{
+                page $\gets$ getPage(pageHeader.id)\;
+                \For{$i\gets0$ \KwTo page.numberOfRecords}{
+                    \If{page.records$[i]$.recordState = enum.full}{
+                        print(page.records[i])\;
+                    }
+                }
+                pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+            }
+            fileName $\gets$ getFileHeader(fileHeader.nextFileName)\;
+        }
+    }
+\end{algorithm}
+
+\newpage
+\subsection{Helper Operations}
+\subsubsection{Gap Fixer}
+After deleting a record it might create a gap between records. Since it may cause problems about sorting it should be fixed. In order to fix this problem this operation moves the deleted record to the end of the records. 
+
+\begin{algorithm}[H]
+    \Fn{gapFixer(fileName: String)}
+    {
+        fileHeader $\gets$ getFileHeader(fileName)\;
+        pageHeader $\gets$ getPageHeader(fileHeader.initialPageId)\;
+        isGapFixed $\gets$ False\;
+        \Repeat{pageHeader $=$ null \textbf{or} isGapFixed $=$ True}
+        {
+            page $\gets$ getPage(pageHeader.pageId)\;
+            \For{$i\gets0$ \KwTo 48}
+            {
+                \eIf{page.records$[i]$.recordState $=$ enum.deleted \; \textbf{and} page.records$[i+1]$.recordState $=$ enum.full}
+                {
+                    swap(page.records$[i]$, page.records$[i+1]$)
+                }
+                {
+                    isGapFixed $\gets$ True\;
+                    break
+                }
+            }
+            
+            \If{page.records$[49]$.recordState $=$ enum.deleted}
+            {
+                tempRecord $\gets$ page.records$[49]$.recordState\;
+                pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+                page $\gets$ getPage(pageHeader.pageId)\;
+                \eIf{page.records$[0]$.recordState $=$ enum.full}
+                {
+                    swap(tempRecord, page.records$[0]$)\;
+                    
+                    pageHeader $\gets$ getPageHeader(pageHeader.previousPageId)\;
+                    page $\gets$ getPage(pageHeader.pageId)\;
+                    swap(tempRecord, page.records$[49]$)\;
+                    
+                    pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+                }
+                {
+                    break
+                }
+            }
+        }  
+        
+        return pageHeader
+    }
+\end{algorithm}
+\newpage
+\subsubsection{Basic Sort Fixer}
+Due to update and create record operation, sorted state of the records might violated. This operation created to fix this issue. When an update or create record operation is used, it results in only one misplaced record. This function iterates over records in the file. First goes beginning to end, and if primary key of the next field is lesser than current one switches them. Then goes end to beginning, and makes the opposite of that. By doing so misplaced record finds it place. It works at O(n) complexity where n is number of records at the file. (This trick only works for 1 misplaced record and system prevents more misplaced records emerging)
+
+\begin{algorithm}[H]
+    \Fn{basicSortFixer(pageId: int, recordIndex: int)}{
+        pageHeader $\gets$ getPageHeader(pageId)\;
+        \Repeat{pageHeader.nextPageId $=$ null}
+        {
+            page $\gets$ getPage(pageHeader.pageId)\;
+            \For{$i\gets0$ \KwTo 48}
+            {
+                \If{page.records$[i+1]$.recordState $=$ enum.full}
+                {
+                    \If{page.records$[i]$.fields$[0]$ > page.records$[i+1]$.fields$[0]$}
+                    {
+                        swap(page.records$[i]$,page.records$[i+1]$)\;
+                    }
+                }
+            }
+            
+            \If{pageHeader.nextPageId $\neq$ null}
+            {
+                tempRecord $\gets$ page.records$[49]$\;
+                pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+                page $\gets$ getPage(pageHeader.pageId)\;
+                \If{page.records$[0]$.fields$[0]$ < tempRecord.fields$[0]$}
+                {
+                    swap(page.records$[0]$, tempRecord)\;
+                    pageHeader $\gets$ getPageHeader(pageHeader.previousPageId)\;
+                    page $\gets$ getPage(pageHeader.pageId)\;
+                    swap(page.records$[49]$, tempRecord)\;
+                    pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+                }
+            }
+        }
+        
+        \Repeat{pageHeader.previousPageId $=$ null}
+        {
+            page $\gets$ getPage(pageHeader.pageId)\;
+            \For{$i\gets$ $49$ \KwTo 1}
+            {
+                \If{page.records$[i]$.recordState $=$ enum.full}
+                {
+                    \If{page.records$[i]$.fields$[0]$ < page.records$[i-1]$.fields$[0]$}
+                    {
+                        swap(page.records$[i]$,page.records$[i-1]$)\;
+                    }
+                }
+            }
+            \If{pageHeader.previousPageId $\neq$ null}
+            {
+                tempRecord $\gets$ page.records$[0]$\;
+                pageHeader $\gets$ getPageHeader(pageHeader.previousPageId)\;
+                page $\gets$ getPage(pageHeader.pageId)\;
+                \If{tempRecord.fields$[0]$ < page.records$[49]$.fields$[0]$}
+                {
+                    swap(tempRecord, page.records$[49]$)\;
+                    pageHeader $\gets$ getPageHeader(pageHeader.nextPageId)\;
+                    page $\gets$ getPage(pageHeader.pageId)\;
+                    swap(tempRecord, page.records$[0]$)\;
+                    pageHeader $\gets$ getPageHeader(pageHeader.previousPageId)\;
+                }
+            }
+        }
+    }
+\end{algorithm}
+
+\newpage
+\textbf{}
+\bigskip
+\section{Conclusions & Assessment}
+
+Under the conditions of constraints and assumtions stated above, storage management system design is completed. System consists of system catalog and data storage units. In the basis of data storage units, files are forms a doubly linked structure by storing name of the previous and next files. Every type its own linked file structure. Every file manages the pages in them in a similar manner. Pages also creates doubly linked page structure. By holding ids of their previous and next neighbours. Id of initial page is stored in the file header. This structure eases to access certain point in the storage management system that I build. In the basis of system catalog, structure is nearly the same however, pages of system catalog forms signly linked structure. Initial files of the doubly linked file structures is stored in the type headers inside of the system catalog. During a type/record is created if necessary a new file is created as well. During the deletion of a type/record soft delete is performed and state of the type/record is changed. If a file becomes empty after deletion, this file will deleted (except systemcatalog.meta). After deletion of a record there is a possibility that a gap might be appear between records. Therefore a gap fixing operation is used. This approach makes system more reliable and helps to allocate memory more efficiently. After update and create record operations sortedness of the records is violated. So basic sort fixing operation is used in oerder to solve that. It works sequences with only one misplaced record. Since system fixes it after each update and create operation there is no chance to have more than one misplaced record. Pseudo code of the mentioned DDL, DML, and helper operations are provided in the report with basic explanations of them. This design focuses on the allocating least memory posibble, and keeping it sorted and ordered. However in order to perform that helper operations (gap fixer, basic sort fixer) are used very often and it may cause an overhead in the system. Linked list structure I created provides a comfortable maneuvering experience in the system, however in order to achieve this I had to store extra ids and file names. Every link also uses storage. To sum up, design is meets the desired functionalities. It has both powerful and improvable sides.
+
+\end{document}

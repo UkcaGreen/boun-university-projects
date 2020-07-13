@@ -1,0 +1,122 @@
+{% extends "base_template.html" %} {% block style %}
+<style>
+  #login-form {
+    text-align: center;
+  }
+
+  .inputs {
+    text-align: start;
+  }
+
+  main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .tab-content {
+    width: 25%;
+  }
+
+  ul li a.active {
+    background-color: #138496 !important;
+  }
+</style>
+{% endblock %} {% block content %}
+
+<ul
+  class="nav nav-pills mb-3 nav-justified"
+  id="pills-tab"
+  role="tablist"
+  style="width: 25%;"
+>
+  <li class="nav-item">
+    <a
+      class="nav-link active"
+      id="pills-listener-tab"
+      data-toggle="pill"
+      href="#pills-listener"
+      role="tab"
+      aria-controls="pills-listener"
+      aria-selected="true"
+      >Listener</a
+    >
+  </li>
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      id="pills-artist-tab"
+      data-toggle="pill"
+      href="#pills-artist"
+      role="tab"
+      aria-controls="pills-artist"
+      aria-selected="false"
+      >Artist</a
+    >
+  </li>
+</ul>
+<div class="tab-content" id="pills-tabContent">
+  <div
+    class="tab-pane fade show active"
+    id="pills-listener"
+    role="tabpanel"
+    aria-labelledby="pills-listener-tab"
+  >
+    <form id="login-form" action="/listener/login" method="POST">
+      <div class="inputs">
+        <div class="form-group">
+          <label for="exampleInputEmail1">Username</label>
+          <input
+            type="text"
+            class="form-control"
+            name="username"
+            placeholder="Enter Username"
+          />
+        </div>
+        <div class="form-group">
+          <label for="exampleInputPassword1">E-mail</label>
+          <input
+            type="email"
+            class="form-control"
+            name="email"
+            placeholder="Enter E-mail"
+          />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-info">Login</button>
+    </form>
+  </div>
+  <div
+    class="tab-pane fade"
+    id="pills-artist"
+    role="tabpanel"
+    aria-labelledby="pills-artist-tab"
+  >
+    <form id="login-form" action="/artist/login" method="POST">
+      <div class="inputs">
+        <div class="form-group">
+          <label for="exampleInputEmail1">Name</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Enter Name"
+            name="name"
+          />
+        </div>
+        <div class="form-group">
+          <label for="exampleInputPassword1">Surname</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Enter Surname"
+            name="surname"
+          />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-info">Login</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

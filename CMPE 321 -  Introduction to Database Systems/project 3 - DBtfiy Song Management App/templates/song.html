@@ -1,0 +1,134 @@
+{% extends "base_template.html" %} {% block style %}
+<style>
+  #song-form {
+    margin: 80px auto !important;
+    margin-top: 120px !important;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #song-form select {
+    width: 180px;
+    margin-right: 5px;
+  }
+</style>
+{% endblock %} {% block content %}
+
+<form
+  id="song-form"
+  action="/song/create"
+  class="form-inline my-2 my-lg-0"
+  method="POST"
+>
+  <input type="number" hidden value="{{ session['id'] }}" name="artist_id" />
+  <input
+    class="form-control mr-sm-2"
+    placeholder="Song Title"
+    name="title"
+    required
+  />
+  <select class="form-control" name="album_id">
+    <option value="null" selected hidden>Choose an Album</option>
+    <option value="1">1</option>
+    <option value="1">2</option>
+    <option value="1">3</option>
+    <option value="1">4</option>
+    <option value="1">5</option>
+  </select>
+  <select multiple class="form-control" id="exampleFormControlSelect2">
+    <option value="" disabled>Select Co-Artists</option>
+    <option>1</option>
+    <option>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>5</option>
+  </select>
+  <button class="btn btn-outline-success my-2 my-sm-0" type="submit">
+    Create
+  </button>
+</form>
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Title</th>
+      <th scope="col">Album</th>
+      <th scope="col">Update</th>
+      <th scope="col">Delete</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for song in songs %}
+    <tr>
+      <th scope="row">{{ song["id"] }}</th>
+      <td>{{ song["title"] }}</td>
+      <td>{{ song["album_id"] }}</td>
+      <td>
+        <!-- Button trigger modal -->
+        <button
+          type="button"
+          class="btn btn-info btn-sm"
+          data-toggle="modal"
+          data-target="#staticBackdrop"
+        >
+          Update
+        </button>
+
+        <!-- Modal -->
+        <div
+          class="modal fade"
+          id="staticBackdrop"
+          data-backdrop="static"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="staticBackdropLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">
+                  Update Song
+                </h5>
+                <button
+                  type="button"
+                  class="close"
+                  data-dismiss="modal"
+                  aria-label="Close"
+                >
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                ...
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  data-dismiss="modal"
+                >
+                  Close
+                </button>
+                <button type="button" class="btn btn-success btn-sm">
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <a
+          class="btn btn-danger my-2 my-sm-0 btn-sm"
+          href="/song/delete/{{ song['id'] }}"
+        >
+          Delete
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

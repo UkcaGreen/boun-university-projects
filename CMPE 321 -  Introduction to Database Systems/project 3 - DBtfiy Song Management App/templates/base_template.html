@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+      integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+      integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+      integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+      crossorigin="anonymous"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+    <style>
+      main {
+        width: 70% !important;
+        margin: 100px auto !important;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles/style.css') }}"
+    />
+    {% block style %} {% endblock %}
+    <title>DBtify | Song Management Platform</title>
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='img/musical-note4_41676.ico') }}"
+    />
+  </head>
+  <body>
+    <header class="fixed-top bg-light">
+      <nav class="navbar navbar-expand-lg navbar-light">
+        <a class="navbar-brand" href="{{url_for('index')}}"
+          ><img
+            style="height: 30px;"
+            src="{{ url_for('static', filename='img/musical-note4_41676.ico') }}"
+            alt=""
+          />
+          DBtify</a
+        >
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-toggle="collapse"
+          data-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          {% if session["type"] == "listener" %}
+          <form
+            class="form-inline my-2 my-lg-0"
+            action="/listener/song/search"
+            method="POST"
+          >
+            <input
+              class="form-control form-control-sm mr-sm-2"
+              type="search"
+              placeholder="Search Song"
+              aria-label="Search"
+              name="search_text"
+            />
+            <button
+              class="btn btn-sm btn-outline-success my-2 my-sm-0"
+              type="submit"
+            >
+              Search
+            </button>
+          </form>
+          {% endif %}
+          <ul class="navbar-nav mr-auto d-flex justify-content-end flex-grow-1">
+            {% if session["type"] == "artist" %}
+            <li class="nav-item active">
+              <a class="nav-link" href="/artist/album">My Albums</a>
+            </li>
+            {% endif %} {% if session["type"] == "listener" %}
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle active"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                Songs
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="/listener/song/all">All Songs</a>
+                <a class="dropdown-item" href="/listener/song/popular"
+                  >Popular Songs</a
+                >
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="/listener/song/liked"
+                  >Liked Songs</a
+                >
+              </div>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle active"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                Albums
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="/listener/album/all"
+                  >All Albums</a
+                >
+                <a class="dropdown-item" href="/listener/album/popular"
+                  >Popular Albums</a
+                >
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="/listener/album/liked"
+                  >Liked Albums</a
+                >
+              </div>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle active"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                Artists
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="/listener/artist/all"
+                  >All Artists</a
+                >
+                <a class="dropdown-item" href="/listener/artist/popular"
+                  >Popular Artists</a
+                >
+              </div>
+            </li>
+            <li class="nav-item active">
+              <a class="nav-link" href="/listener/listener">Listeners</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a
+                class="nav-link dropdown-toggle active"
+                href="#"
+                id="navbarDropdown"
+                role="button"
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+              >
+                Genres
+              </a>
+              <div
+                class="dropdown-menu overflow-auto"
+                aria-labelledby="navbarDropdown"
+                style="max-height: 200px;"
+              >
+                {% for genre in context['genres'] %}
+                <a
+                  class="dropdown-item"
+                  href="/listener/song/by/genre/{{ genre }}"
+                  >{{ genre }}</a
+                >
+                {% endfor %}
+              </div>
+            </li>
+            {% endif %} {% if session["state"] %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{url_for('logout')}}">Logout</a>
+            </li>
+            {% else %}
+            <li class="nav-item active">
+              <a class="nav-link" href="{{url_for('login')}}">Login</a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </nav>
+    </header>
+    <main>
+      {{ context["title"] }} {% block content %} {% endblock %}
+    </main>
+  </body>
+</html>

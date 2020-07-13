@@ -1,0 +1,57 @@
+{% extends "base_template.html" %} {% block style %}
+<style>
+  main h4 {
+    text-align: center;
+  }
+
+  .button-container a {
+    margin-left: 10px;
+    width: 60px;
+  }
+</style>
+{% endblock %} {% block content %}
+
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th scope="col">Id</th>
+      <th scope="col">Title</th>
+      <th scope="col">Album</th>
+      <th scope="col">Artists</th>
+      <th scope="col">Total Likes</th>
+      <th scope="col"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for song in context["songs"] %}
+    <tr>
+      <th scope="row">{{ loop.index }}</th>
+      <td>{{ song["song_title"] }}</td>
+      <td>{{ song["album_title"] }}</td>
+      <td>{{ song["artist_names"] }}</td>
+      <th scope="col">{{ song["total_likes"] }}</th>
+      <td>
+        <div class="button-container d-flex justify-content-end">
+          {% if song['is_liked'] == 1 %}
+          <a
+            class="btn btn-secondary my-2 my-sm-0 btn-sm"
+            href="/song/unlike/{{ song['song_id'] }}"
+          >
+            Unlike
+          </a>
+          {% else %}
+          <a
+            class="btn btn-primary my-2 my-sm-0 btn-sm"
+            href="/song/like/{{ song['song_id'] }}"
+          >
+            Like
+          </a>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

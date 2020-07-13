@@ -1,0 +1,212 @@
+{% extends "base_template.html" %} {% block style %}
+<style>
+  main h4 {
+    text-align: center;
+  }
+
+  #song-form {
+    display: flex;
+    width: 30%;
+    margin: 80px auto 40px auto !important;
+    margin-top: 120px !important;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #song-form select {
+    width: 100%;
+    margin: 10px;
+  }
+
+  #song-form .text-input {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+  }
+
+  #song-form .text-input input {
+    margin: auto;
+    width: 45%;
+  }
+
+  .modal-body {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-body * {
+    margin: 5px auto !important;
+  }
+</style>
+<!-- <script>
+  $(document).ready(function () {
+    $("#artist-select").click(function (e) {
+      var i = this.selectedIndex;
+      if (this.options[i].selectedOld == true) {
+        this.options[i].selected = false;
+        this.options[i].selectedOld = false;
+      } else {
+        this.options[i].selectedOld = true;
+      }
+    });
+  });
+</script> -->
+{% endblock %} {% block content %}
+
+<form
+  id="song-form"
+  action="/song/create"
+  class="form-inline my-2 my-lg-0"
+  method="POST"
+>
+  <input type="number" value="{{ session['id'] }}" hidden name="artist_id" />
+  <input
+    type="number"
+    value="{{ context['album']['album_id'] }}"
+    hidden
+    name="album_id"
+  />
+  <input
+    class="form-control mr-sm-2"
+    placeholder="Song Title"
+    name="song_title"
+    required
+  />
+  <select multiple class="form-control" name="other_artists" id="artist-select">
+    <option value="" disabled>Select Co-Artists</option>
+    {% for artist in context["artists"] %} {% if artist["id"] != session["id"]
+    %}
+    <option value="{{ artist['id'] }}"
+      >{{ artist["name"] }} {{ artist["surname"] }}</option
+    >
+    {% endif %} {% endfor %}
+  </select>
+  <button
+    type="submit"
+    class="btn btn-outline-success my-2 my-sm-0"
+    data-toggle="modal"
+    data-target="#staticBackdrop"
+  >
+    Create
+  </button>
+</form>
+
+<h4>Songs in {{ context["album"]["album_title"] }}</h4>
+<table class="table table-hover">
+  <thead>
+    <tr>
+      <th scope="col">Id</th>
+      <th scope="col">Title</th>
+      <th scope="col">Artists</th>
+      <th scope="col">Update</th>
+      <th scope="col">Delete</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for song in context["songs"] %}
+    <tr>
+      <th scope="row">{{ loop.index }}</th>
+      <td>{{ song["song_title"] }}</td>
+      <td>{{ song["artist_names"] }}</td>
+      <td>
+        <!-- Button trigger modal -->
+        <button
+          type="button"
+          class="btn btn-info btn-sm"
+          data-toggle="modal"
+          data-target="#staticBackdrop{{ song['song_id'] }}"
+        >
+          Update
+        </button>
+
+        <!-- Modal -->
+        <div
+          class="modal fade"
+          id="staticBackdrop{{ song['song_id'] }}"
+          data-backdrop="static"
+          tabindex="-1"
+          role="dialog"
+          aria-labelledby="staticBackdropLabel"
+          aria-hidden="true"
+        >
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <form action="/song/update" method="POST">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="staticBackdropLabel">
+                    Update Song: {{ song['song_title'] }}
+                  </h5>
+                  <button
+                    type="button"
+                    class="close"
+                    data-dismiss="modal"
+                    aria-label="Close"
+                  >
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <label for="song_title">Title:</label>
+                  <input
+                    type="number"
+                    value="{{ song['song_id'] }}"
+                    hidden
+                    name="song_id"
+                  />
+                  <input
+                    class="form-control mr-sm-2"
+                    placeholder="Song Title"
+                    name="song_title"
+                    value="{{ song['song_title'] }}"
+                    required
+                  />
+                  <select
+                    multiple
+                    class="form-control"
+                    name="other_artists"
+                    id="artist-select"
+                  >
+                    <option value="" disabled>Select Co-Artists</option>
+                    {% for artist in context["artists"] %} {% if artist["id"] !=
+                    session["id"] %}
+                    <option value="{{ artist['id'] }}"
+                      >{{ artist["name"] }} {{ artist["surname"] }}</option
+                    >
+                    {% endif %} {% endfor %}
+                  </select>
+                </div>
+                <div class="modal-footer">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    data-dismiss="modal"
+                  >
+                    Close
+                  </button>
+                  <button type="submit" class="btn btn-success btn-sm">
+                    Submit
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <a
+          class="btn btn-danger my-2 my-sm-0 btn-sm"
+          href="/song/delete/{{ song['song_id'] }}"
+        >
+          Delete
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
